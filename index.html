@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Table Maker</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>HTML Table Maker</h1>
+            <p>Build beautiful tables visually and export to HTML</p>
+        </div>
+
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.addRow()">+ Row</button>
+                <button onclick="tableBuilder.addColumn()">+ Column</button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.deleteRow()" class="danger">- Row</button>
+                <button onclick="tableBuilder.deleteColumn()" class="danger">- Column</button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.mergeCells()">Merge Cells</button>
+                <button onclick="tableBuilder.splitCell()">Split Cell</button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.toggleHeader()">Toggle Header</button>
+                <button onclick="tableBuilder.openHtmlEditor()">Edit HTML</button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.clearTable()" class="danger">Clear All</button>
+            </div>
+        </div>
+
+        <div class="styling-panel">
+            <div class="style-control">
+                <label>Text Color:</label>
+                <input type="color" id="textColor" value="#000000" onchange="tableBuilder.applyStyle('color', this.value)">
+            </div>
+
+            <div class="style-control">
+                <label>Background:</label>
+                <input type="color" id="bgColor" value="#ffffff" onchange="tableBuilder.applyStyle('backgroundColor', this.value)">
+            </div>
+
+            <div class="style-control">
+                <label>Align:</label>
+                <select id="textAlign" onchange="tableBuilder.applyStyle('textAlign', this.value)">
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                </select>
+            </div>
+
+            <div class="style-control">
+                <label>Border:</label>
+                <select id="borderStyle" onchange="tableBuilder.applyStyle('borderStyle', this.value)">
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="double">Double</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="html-editor-panel" id="htmlEditorPanel">
+            <div class="html-editor-header">
+                <h3>Edit Complete Cell HTML</h3>
+                <span class="html-editor-info">Edit the entire cell including &lt;td&gt;/&lt;th&gt; tag and all attributes. Click another cell to switch.</span>
+            </div>
+            <textarea id="cellHtmlEditor" placeholder="Select a cell to edit its complete HTML..."></textarea>
+            <div style="margin-top: 10px;">
+                <button onclick="tableBuilder.applyCellHtml()" class="primary">Apply HTML</button>
+                <button onclick="tableBuilder.closeHtmlEditor()">Close Editor</button>
+            </div>
+        </div>
+
+        <div class="editor-section">
+            <div class="table-wrapper">
+                <table id="editorTable">
+                    <tr>
+                        <td contenteditable="true">Cell 1</td>
+                        <td contenteditable="true">Cell 2</td>
+                        <td contenteditable="true">Cell 3</td>
+                    </tr>
+                    <tr>
+                        <td contenteditable="true">Cell 4</td>
+                        <td contenteditable="true">Cell 5</td>
+                        <td contenteditable="true">Cell 6</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="code-section">
+            <div class="code-header">
+                <h3>HTML Output (Editable)</h3>
+                <div>
+                    <button onclick="tableBuilder.applyCodeChanges()" class="primary">Apply Changes</button>
+                    <button onclick="tableBuilder.copyCode()" class="primary">Copy Code</button>
+                </div>
+            </div>
+            <textarea id="codeOutput" spellcheck="false"></textarea>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
