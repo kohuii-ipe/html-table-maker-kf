@@ -10,6 +10,22 @@ body {
     padding: 10px;
 }
 
+/* Skip to main content link for accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #4299e1;
+    color: white;
+    padding: 8px;
+    text-decoration: none;
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -67,6 +83,8 @@ button {
     cursor: pointer;
     font-size: 14px;
     transition: all 0.2s;
+    min-height: 36px; /* Minimum touch target size */
+    min-width: 36px;
 }
 
 button:hover {
@@ -75,6 +93,11 @@ button:hover {
 
 button:active {
     transform: scale(0.98);
+}
+
+button:focus-visible {
+    outline: 2px solid #4299e1;
+    outline-offset: 2px;
 }
 
 button.primary {
@@ -142,7 +165,6 @@ button.danger:hover {
 }
 
 #editorTable td.drag-over {
-    background: #c6f6d5;
     outline: 2px dashed #38a169;
 }
 
@@ -279,6 +301,13 @@ button.danger:hover {
     border-radius: 4px;
     background: white;
     font-size: 13px;
+    min-height: 36px;
+}
+
+.style-control select:focus-visible,
+.style-control input[type="color"]:focus-visible {
+    outline: 2px solid #4299e1;
+    outline-offset: 2px;
 }
 
 .code-section {
@@ -317,7 +346,7 @@ button.danger:hover {
     border-radius: 4px;
     padding: 15px;
     width: 100%;
-    min-height: 250px;
+    height: 200px;
     resize: vertical;
 }
 
@@ -352,20 +381,35 @@ button.danger:hover {
     }
 
     button {
-        padding: 6px 10px;
-        font-size: 13px;
+        padding: 8px 10px;
+        font-size: 12px;
+        min-height: 44px; /* Larger touch target on mobile */
     }
 
     .toolbar-divider {
         display: none;
     }
 
+    .toolbar-group {
+        flex: 1 1 100%;
+        justify-content: flex-start;
+    }
+
     .styling-panel {
         gap: 10px;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .style-control {
         font-size: 12px;
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .style-control select,
+    .style-control input {
+        flex: 1;
     }
 
     #editorTable td {
@@ -377,6 +421,21 @@ button.danger:hover {
     .code-section {
         padding: 15px;
         font-size: 12px;
+    }
+
+    .code-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .code-header div {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .code-header button {
+        width: 100%;
     }
 }
 
@@ -393,4 +452,54 @@ button.danger:hover {
         min-width: 50px;
         padding: 6px;
     }
+}
+
+/* Section indicators for thead, tbody, tfoot */
+#editorTable tr[data-section="thead"] {
+    background: #ebf8ff;
+    border-left: 4px solid #4299e1;
+}
+
+#editorTable tr[data-section="tbody"] {
+    background: white;
+}
+
+#editorTable tr[data-section="tfoot"] {
+    background: #f7fafc;
+    border-left: 4px solid #718096;
+}
+
+#editorTable tr[data-section="thead"] td {
+    background: #ebf8ff;
+}
+
+#editorTable tr[data-section="tfoot"] td {
+    background: #f7fafc;
+}
+
+/* Section badges */
+#editorTable tr[data-section]::before {
+    content: attr(data-section);
+    position: absolute;
+    left: -60px;
+    background: #4299e1;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+#editorTable tr[data-section="tbody"]::before {
+    background: #48bb78;
+}
+
+#editorTable tr[data-section="tfoot"]::before {
+    background: #718096;
+}
+
+.table-wrapper {
+    position: relative;
+    padding-left: 70px;
 }

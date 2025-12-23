@@ -1,126 +1,412 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HTML Table Maker</title>
+    <title>HTMLテーブル作成ツール</title>
+    <meta name="description" content="簡単にHTMLテーブルを作成・編集できるビジュアルエディタ">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container" role="main">
         <div class="header">
-            <h1>HTML Table Maker</h1>
-            <p>Build beautiful tables visually and export to HTML</p>
+            <h1>HTMLテーブル作成ツール</h1>
+            <p style="font-size: 14px; color: #718096; margin-top: 8px;">💡 セルを選択してCtrl+Vでエクセル・ワードのテーブルデータを貼り付けできます</p>
         </div>
 
-        <div class="toolbar">
+        <nav class="toolbar" role="toolbar" aria-label="テーブル編集ツールバー">
             <div class="toolbar-group">
-                <button onclick="tableBuilder.addRow()">+ Row</button>
-                <button onclick="tableBuilder.addColumn()">+ Column</button>
+                <button onclick="tableBuilder.addRow()" title="選択セルの後に行を追加（未選択時は末尾）" aria-label="テーブルに行を追加">+ 行を追加</button>
+                <button onclick="tableBuilder.addColumn()" title="選択セルの後に列を追加（未選択時は末尾）" aria-label="テーブルに列を追加">+ 列を追加</button>
             </div>
 
-            <div class="toolbar-divider"></div>
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
 
             <div class="toolbar-group">
-                <button onclick="tableBuilder.deleteRow()" class="danger">- Row</button>
-                <button onclick="tableBuilder.deleteColumn()" class="danger">- Column</button>
+                <button onclick="tableBuilder.deleteRow()" class="danger" title="選択セルの行を削除" aria-label="選択された行を削除">- 行を削除</button>
+                <button onclick="tableBuilder.deleteColumn()" class="danger" title="選択セルの列を削除" aria-label="選択された列を削除">- 列を削除</button>
             </div>
 
-            <div class="toolbar-divider"></div>
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
 
             <div class="toolbar-group">
-                <button onclick="tableBuilder.mergeCells()">Merge Cells</button>
-                <button onclick="tableBuilder.splitCell()">Split Cell</button>
+                <button onclick="tableBuilder.mergeCells()" aria-label="選択されたセルを結合">セルを結合</button>
+                <button onclick="tableBuilder.splitCell()" aria-label="選択されたセルを分割">セルを分割</button>
             </div>
 
-            <div class="toolbar-divider"></div>
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
 
             <div class="toolbar-group">
-                <button onclick="tableBuilder.toggleHeader()">Toggle Header</button>
-                <button onclick="tableBuilder.openHtmlEditor()">Edit HTML</button>
+                <button onclick="tableBuilder.toggleHeader()" aria-label="ヘッダースタイルを切り替え">ヘッダー切替</button>
+                <button onclick="tableBuilder.openHtmlEditor()" aria-label="セルのHTMLを編集">HTML編集</button>
+                <button onclick="tableBuilder.openCellAttributesModal()" aria-label="セルのtd/th属性を編集">セル属性</button>
             </div>
 
-            <div class="toolbar-divider"></div>
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
 
             <div class="toolbar-group">
-                <button onclick="tableBuilder.clearTable()" class="danger">Clear All</button>
+                <button onclick="tableBuilder.moveRowUp()" title="選択行を上に移動" aria-label="選択された行を上に移動">↑ 行上</button>
+                <button onclick="tableBuilder.moveRowDown()" title="選択行を下に移動" aria-label="選択された行を下に移動">↓ 行下</button>
+                <button onclick="tableBuilder.moveColumnLeft()" title="選択列を左に移動" aria-label="選択された列を左に移動">← 列左</button>
+                <button onclick="tableBuilder.moveColumnRight()" title="選択列を右に移動" aria-label="選択された列を右に移動">→ 列右</button>
             </div>
-        </div>
 
-        <div class="styling-panel">
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.undo()" title="元に戻す (Ctrl+Z)" aria-label="変更を元に戻す">↶ 元に戻す</button>
+                <button onclick="tableBuilder.redo()" title="やり直し (Ctrl+Shift+Z)" aria-label="変更をやり直す">↷ やり直し</button>
+            </div>
+
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.exportAsCSV()" class="primary" title="CSV形式でダウンロード" aria-label="テーブルをCSV形式でエクスポート">CSV出力</button>
+                <button onclick="tableBuilder.exportAsMarkdown()" class="primary" title="Markdown形式でダウンロード" aria-label="テーブルをMarkdown形式でエクスポート">MD出力</button>
+                <button onclick="tableBuilder.exportAsJSON()" class="primary" title="JSON形式でダウンロード" aria-label="テーブルをJSON形式でエクスポート">JSON出力</button>
+            </div>
+
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="toolbar-group">
+                <button onclick="tableBuilder.clearTable()" class="danger" aria-label="テーブル全体をクリア">すべてクリア</button>
+                <button onclick="tableBuilder.clearStorage()" class="danger" aria-label="保存されたデータをクリア">保存データをクリア</button>
+            </div>
+
+            <div style="margin-left: auto; font-size: 12px; color: #718096;">
+                <span id="lastSaved" aria-live="polite" aria-atomic="true"></span>
+            </div>
+        </nav>
+
+        <section class="table-structure-panel" role="region" aria-label="テーブル構造コントロール" style="background: #f7fafc; padding: 15px; margin: 10px 0; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <label for="tableCaption" style="font-weight: 600; margin-right: 8px;">テーブルキャプション:</label>
+                    <input type="text" id="tableCaption" placeholder="キャプションを入力（オプション）"
+                           style="padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; width: 100%; max-width: 400px;"
+                           oninput="tableBuilder.setCaption(this.value)">
+                </div>
+                <div style="border-left: 2px solid #cbd5e0; padding-left: 20px;">
+                    <label style="font-weight: 600; margin-right: 8px;">行のセクション:</label>
+                    <button onclick="tableBuilder.moveRowToSection('thead')" title="選択行をヘッダーセクションに移動" style="padding: 6px 12px; margin: 0 4px;">→ THEAD</button>
+                    <button onclick="tableBuilder.moveRowToSection('tbody')" title="選択行をボディセクションに移動" style="padding: 6px 12px; margin: 0 4px;">→ TBODY</button>
+                    <button onclick="tableBuilder.moveRowToSection('tfoot')" title="選択行をフッターセクションに移動" style="padding: 6px 12px; margin: 0 4px;">→ TFOOT</button>
+                </div>
+                <div style="border-left: 2px solid #cbd5e0; padding-left: 20px;">
+                    <button onclick="tableBuilder.openColumnPropertiesPanel()" title="列のプロパティを設定" style="padding: 6px 12px;">列プロパティ</button>
+                </div>
+            </div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                <label style="font-weight: 600; margin-right: 8px;">タグ属性編集:</label>
+                <button onclick="tableBuilder.openTablePropertiesModal()" title="tableタグの属性を編集" style="padding: 6px 12px; margin: 0 4px;">テーブル属性</button>
+                <button onclick="tableBuilder.openRowPropertiesModal()" title="選択行のtr属性を編集" style="padding: 6px 12px; margin: 0 4px;">行属性</button>
+                <button onclick="tableBuilder.openSectionPropertiesModal()" title="セクション(thead/tbody/tfoot)の属性を編集" style="padding: 6px 12px; margin: 0 4px;">セクション属性</button>
+                <button onclick="tableBuilder.openCaptionPropertiesModal()" title="captionタグの属性を編集" style="padding: 6px 12px; margin: 0 4px;">キャプション属性</button>
+            </div>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                <label style="font-weight: 600; margin-right: 8px;">属性パターン:</label>
+                <button onclick="tableBuilder.openPatternManager()" title="属性パターンを管理・適用" style="padding: 6px 12px; margin: 0 4px; background: #48bb78; color: white; border: 1px solid #38a169;">パターン管理</button>
+            </div>
+        </section>
+
+        <section class="styling-panel" role="region" aria-label="セルスタイリングコントロール">
             <div class="style-control">
-                <label>Text Color:</label>
-                <input type="color" id="textColor" value="#000000" onchange="tableBuilder.applyStyle('color', this.value)">
+                <label id="textAlignLabel">テキスト配置:</label>
+                <button onclick="tableBuilder.applyTextAlign('left')" title="左揃え" aria-label="テキストを左揃えにする" aria-describedby="textAlignLabel">◀</button>
+                <button onclick="tableBuilder.applyTextAlign('center')" title="中央揃え" aria-label="テキストを中央揃えにする" aria-describedby="textAlignLabel">■</button>
+                <button onclick="tableBuilder.applyTextAlign('right')" title="右揃え" aria-label="テキストを右揃えにする" aria-describedby="textAlignLabel">▶</button>
             </div>
 
-            <div class="style-control">
-                <label>Background:</label>
-                <input type="color" id="bgColor" value="#ffffff" onchange="tableBuilder.applyStyle('backgroundColor', this.value)">
-            </div>
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
 
             <div class="style-control">
-                <label>Align:</label>
-                <select id="textAlign" onchange="tableBuilder.applyStyle('textAlign', this.value)">
-                    <option value="left">Left</option>
-                    <option value="center">Center</option>
-                    <option value="right">Right</option>
+                <label for="bgColorPicker">背景色:</label>
+                <input type="color" id="bgColorPicker" onchange="tableBuilder.applyBackgroundColor(this.value)" title="背景色を選択" aria-label="セルの背景色を選択">
+                <button onclick="tableBuilder.applyBackgroundColor('transparent')" title="背景をクリア" aria-label="背景色をクリア">✕</button>
+            </div>
+
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="style-control">
+                <label for="textColorPicker">文字色:</label>
+                <input type="color" id="textColorPicker" value="#000000" onchange="tableBuilder.applyTextColor(this.value)" title="文字色を選択" aria-label="セルの文字色を選択">
+            </div>
+
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
+
+            <div class="style-control">
+                <label for="borderSelect">ボーダー:</label>
+                <select id="borderSelect" onchange="tableBuilder.applyBorder(this.value); this.value='';" title="ボーダースタイルを選択" aria-label="セルのボーダースタイルを選択">
+                    <option value="">選択...</option>
+                    <option value="1px solid #000">細い実線</option>
+                    <option value="2px solid #000">太い実線</option>
+                    <option value="1px dashed #000">破線</option>
+                    <option value="1px dotted #000">点線</option>
+                    <option value="2px double #000">二重線</option>
                 </select>
             </div>
 
-            <div class="style-control">
-                <label>Border:</label>
-                <select id="borderStyle" onchange="tableBuilder.applyStyle('borderStyle', this.value)">
-                    <option value="solid">Solid</option>
-                    <option value="dashed">Dashed</option>
-                    <option value="dotted">Dotted</option>
-                    <option value="double">Double</option>
-                    <option value="none">None</option>
-                </select>
-            </div>
-        </div>
+            <div class="toolbar-divider" role="separator" aria-hidden="true"></div>
 
-        <div class="html-editor-panel" id="htmlEditorPanel">
+            <div class="style-control">
+                <button onclick="tableBuilder.clearCellStyles()" class="danger" title="選択セルのスタイルをクリア" aria-label="選択されたセルのスタイルをクリア">スタイルをクリア</button>
+            </div>
+        </section>
+
+        <section class="html-editor-panel" id="htmlEditorPanel" role="region" aria-label="セルHTML編集パネル">
             <div class="html-editor-header">
-                <h3>Edit Complete Cell HTML</h3>
-                <span class="html-editor-info">Edit the entire cell including &lt;td&gt;/&lt;th&gt; tag and all attributes. Click another cell to switch.</span>
+                <h3>セルHTML完全編集</h3>
+                <span class="html-editor-info">&lt;td&gt;/&lt;th&gt;タグとすべての属性を含む完全なセルを編集できます。別のセルをクリックすると切り替わります。</span>
             </div>
-            <textarea id="cellHtmlEditor" placeholder="Select a cell to edit its complete HTML..."></textarea>
+            <textarea id="cellHtmlEditor" placeholder="セルを選択してHTMLを編集してください..." aria-label="セルのHTML編集エリア"></textarea>
             <div style="margin-top: 10px;">
-                <button onclick="tableBuilder.applyCellHtml()" class="primary">Apply HTML</button>
-                <button onclick="tableBuilder.closeHtmlEditor()">Close Editor</button>
+                <button onclick="tableBuilder.applyCellHtml()" class="primary" aria-label="編集したHTMLをセルに適用">HTMLを適用</button>
+                <button onclick="tableBuilder.closeHtmlEditor()" aria-label="HTMLエディタを閉じる">エディタを閉じる</button>
             </div>
-        </div>
+        </section>
 
-        <div class="editor-section">
+        <section class="editor-section" role="region" aria-label="テーブル編集エリア">
             <div class="table-wrapper">
-                <table id="editorTable">
-                    <tr>
-                        <td contenteditable="true">Cell 1</td>
-                        <td contenteditable="true">Cell 2</td>
-                        <td contenteditable="true">Cell 3</td>
+                <table id="editorTable" role="grid" aria-label="編集可能なHTMLテーブル">
+                    <tr role="row">
+                        <td contenteditable="true" role="gridcell">セル1</td>
+                        <td contenteditable="true" role="gridcell">セル2</td>
+                        <td contenteditable="true" role="gridcell">セル3</td>
                     </tr>
-                    <tr>
-                        <td contenteditable="true">Cell 4</td>
-                        <td contenteditable="true">Cell 5</td>
-                        <td contenteditable="true">Cell 6</td>
+                    <tr role="row">
+                        <td contenteditable="true" role="gridcell">セル4</td>
+                        <td contenteditable="true" role="gridcell">セル5</td>
+                        <td contenteditable="true" role="gridcell">セル6</td>
                     </tr>
                 </table>
             </div>
-        </div>
+        </section>
 
-        <div class="code-section">
+        <section class="code-section" role="region" aria-label="HTML出力エリア">
             <div class="code-header">
-                <h3>HTML Output (Editable)</h3>
+                <h3>HTML出力（編集可能）</h3>
                 <div>
-                    <button onclick="tableBuilder.applyCodeChanges()" class="primary">Apply Changes</button>
-                    <button onclick="tableBuilder.copyCode()" class="primary">Copy Code</button>
+                    <button onclick="tableBuilder.applyCodeChanges()" class="primary" aria-label="HTMLコードの変更をテーブルに適用">変更を適用</button>
+                    <button onclick="tableBuilder.copyCode()" class="primary" aria-label="HTMLコードをクリップボードにコピー">コードをコピー</button>
                 </div>
             </div>
-            <textarea id="codeOutput" spellcheck="false"></textarea>
+            <textarea id="codeOutput" spellcheck="false" aria-label="生成されたHTMLコード"></textarea>
+        </section>
+    </div>
+
+    <!-- Column Properties Modal -->
+    <div id="columnPropertiesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">列プロパティ（colgroup/col）</h3>
+                <button onclick="tableBuilder.closeColumnPropertiesPanel()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div id="columnPropertiesList"></div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.applyColumnProperties()" class="primary" style="padding: 8px 20px;">適用</button>
+                <button onclick="tableBuilder.closeColumnPropertiesPanel()" style="padding: 8px 20px; margin-left: 10px;">キャンセル</button>
+            </div>
         </div>
     </div>
 
-    <div id="toast" class="toast"></div>
+    <!-- Table Properties Modal -->
+    <div id="tablePropertiesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">&lt;table&gt; タグ編集</h3>
+                <button onclick="tableBuilder.closeTablePropertiesModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="color: #718096; font-size: 13px; margin-bottom: 10px;">開始タグの属性部分を直接編集してください（&lt;table と &gt; は不要）</p>
+                <div style="background: #f7fafc; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #4a5568; margin-bottom: 10px;">
+                    例: class="my-table" border="1" cellspacing="0" data-custom="value"
+                </div>
+                <textarea id="tableTagEditor" rows="4" placeholder='class="my-table" border="1"'
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.applyTableProperties()" class="primary" style="padding: 8px 20px;">適用</button>
+                <button onclick="tableBuilder.closeTablePropertiesModal()" style="padding: 8px 20px; margin-left: 10px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row Properties Modal -->
+    <div id="rowPropertiesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">&lt;tr&gt; タグ編集 (選択行)</h3>
+                <button onclick="tableBuilder.closeRowPropertiesModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="color: #718096; font-size: 13px; margin-bottom: 10px;">開始タグの属性部分を直接編集してください（&lt;tr と &gt; は不要）</p>
+                <div style="background: #f7fafc; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #4a5568; margin-bottom: 10px;">
+                    例: class="row-class" style="background: #f0f0f0;" id="row-1"
+                </div>
+                <textarea id="rowTagEditor" rows="3" placeholder='class="row-class" id="row-1"'
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.applyRowProperties()" class="primary" style="padding: 8px 20px;">適用</button>
+                <button onclick="tableBuilder.closeRowPropertiesModal()" style="padding: 8px 20px; margin-left: 10px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section Properties Modal -->
+    <div id="sectionPropertiesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">&lt;thead/tbody/tfoot&gt; タグ編集</h3>
+                <button onclick="tableBuilder.closeSectionPropertiesModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="font-weight: 600; margin-right: 8px;">セクション:</label>
+                <select id="sectionSelect" onchange="tableBuilder.loadSectionTagEditor()" style="padding: 6px 12px; border: 1px solid #cbd5e0; border-radius: 4px;">
+                    <option value="thead">thead</option>
+                    <option value="tbody">tbody</option>
+                    <option value="tfoot">tfoot</option>
+                </select>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="color: #718096; font-size: 13px; margin-bottom: 10px;">開始タグの属性部分を直接編集してください（タグ名と &gt; は不要）</p>
+                <div style="background: #f7fafc; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #4a5568; margin-bottom: 10px;">
+                    例: class="section-class" style="vertical-align: top;" id="section-1"
+                </div>
+                <textarea id="sectionTagEditor" rows="3" placeholder='class="section-class" id="section-1"'
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.applySectionProperties()" class="primary" style="padding: 8px 20px;">適用</button>
+                <button onclick="tableBuilder.closeSectionPropertiesModal()" style="padding: 8px 20px; margin-left: 10px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Caption Properties Modal -->
+    <div id="captionPropertiesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">&lt;caption&gt; タグ編集</h3>
+                <button onclick="tableBuilder.closeCaptionPropertiesModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="color: #718096; font-size: 13px; margin-bottom: 10px;">開始タグの属性部分を直接編集してください（&lt;caption と &gt; は不要）</p>
+                <div style="background: #f7fafc; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #4a5568; margin-bottom: 10px;">
+                    例: class="caption-class" style="text-align: center;" id="caption-1"
+                </div>
+                <textarea id="captionTagEditor" rows="3" placeholder='class="caption-class" style="text-align: center;"'
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.applyCaptionProperties()" class="primary" style="padding: 8px 20px;">適用</button>
+                <button onclick="tableBuilder.closeCaptionPropertiesModal()" style="padding: 8px 20px; margin-left: 10px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cell Attributes Modal -->
+    <div id="cellAttributesModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">&lt;td/th&gt; タグ編集 (選択セル)</h3>
+                <button onclick="tableBuilder.closeCellAttributesModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <p style="color: #718096; font-size: 13px; margin-bottom: 10px;">開始タグの属性部分を直接編集してください（タグ名と &gt; は不要）</p>
+                <div style="background: #f7fafc; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #4a5568; margin-bottom: 10px;">
+                    例: class="cell-class" style="background: #f0f0f0;" rowspan="2" data-value="123"
+                </div>
+                <textarea id="cellTagEditor" rows="4" placeholder='class="cell-class" rowspan="2"'
+                          style="width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical;"></textarea>
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.applyCellAttributes()" class="primary" style="padding: 8px 20px;">適用</button>
+                <button onclick="tableBuilder.closeCellAttributesModal()" style="padding: 8px 20px; margin-left: 10px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pattern Manager Modal -->
+    <div id="patternManagerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">属性パターン管理</h3>
+                <button onclick="tableBuilder.closePatternManager()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+            <div style="margin-bottom: 20px; display: grid; gap: 10px;">
+                <button onclick="tableBuilder.createNewPattern()" class="primary" style="padding: 8px 16px;">+ 新規パターン作成</button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <button onclick="tableBuilder.exportPatterns()" style="padding: 8px 16px; background: #4299e1; color: white; border: 1px solid #3182ce;">📥 パターンをエクスポート</button>
+                    <button onclick="tableBuilder.importPatterns()" style="padding: 8px 16px; background: #48bb78; color: white; border: 1px solid #38a169;">📤 パターンをインポート</button>
+                </div>
+            </div>
+            <input type="file" id="patternImportFile" accept=".json" style="display: none;" onchange="tableBuilder.handleImportFile(event)">
+            <div id="patternList" style="display: grid; gap: 10px;">
+                <!-- Pattern items will be inserted here -->
+            </div>
+            <div style="margin-top: 20px; text-align: right;">
+                <button onclick="tableBuilder.closePatternManager()" style="padding: 8px 20px;">閉じる</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pattern Editor Modal -->
+    <div id="patternEditorModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1001; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 800px; width: 90%; max-height: 85vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;" id="patternEditorTitle">パターン編集</h3>
+                <button onclick="tableBuilder.closePatternEditor()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; font-weight: 600; margin-bottom: 8px;">パターン名:</label>
+                <input type="text" id="patternNameInput" placeholder="例: Corporate Style"
+                       style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 14px;">
+            </div>
+
+            <div style="background: #f7fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="color: #4a5568; font-size: 13px; margin: 0;">
+                    チェックを入れたタグの属性のみがパターンに保存・適用されます。<br>
+                    適用時: テーブル関連は全体に、行・セル関連は選択部分のみに適用されます。
+                </p>
+            </div>
+
+            <div id="patternAttributesContainer" style="display: grid; gap: 15px;">
+                <!-- Attribute editors will be inserted here -->
+            </div>
+
+            <div style="margin-top: 25px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="tableBuilder.savePattern()" class="primary" style="padding: 8px 20px;">保存</button>
+                <button onclick="tableBuilder.closePatternEditor()" style="padding: 8px 20px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pattern Preview Modal -->
+    <div id="patternPreviewModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1002; align-items: center; justify-content: center;">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 700px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h3 style="margin: 0;">パターン適用プレビュー</h3>
+                <button onclick="tableBuilder.closePatternPreview()" style="background: none; border: none; font-size: 24px; cursor: pointer; padding: 0; width: 30px; height: 30px;">&times;</button>
+            </div>
+
+            <div style="background: #ebf8ff; border-left: 4px solid #4299e1; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
+                <p style="margin: 0; color: #2c5282; font-size: 13px;" id="patternPreviewPatternName"></p>
+            </div>
+
+            <div id="patternPreviewContent" style="display: grid; gap: 12px; margin-bottom: 20px;">
+                <!-- Preview content will be inserted here -->
+            </div>
+
+            <div style="text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="tableBuilder.confirmApplyPattern()" class="primary" style="padding: 8px 20px;">確認して適用</button>
+                <button onclick="tableBuilder.closePatternPreview()" style="padding: 8px 20px;">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 
     <script src="script.js"></script>
 </body>
