@@ -2544,6 +2544,17 @@ const tableBuilder = {
         this.showToast(`${this.selectedCells.length}個のセルの属性を適用しました`);
     },
 
+    // ========== Batch Preview Helper ==========
+
+    clearBatchPreview() {
+        const previewCells = document.querySelectorAll('[data-batch-preview="true"]');
+        previewCells.forEach(cell => {
+            cell.style.outline = '';
+            cell.style.outlineOffset = '';
+            cell.removeAttribute('data-batch-preview');
+        });
+    },
+
     // ========== Pattern Management Functions ==========
 
     loadPatterns() {
@@ -2684,7 +2695,75 @@ const tableBuilder = {
         });
 
         container.innerHTML = html;
+
+        // Load position settings if editing
+        const usePositionCheckbox = document.getElementById('patternUsePositionFilter');
+        if (patternData?.positionFilter) {
+            usePositionCheckbox.checked = true;
+            document.getElementById('patternEditorPositionSettings').style.display = 'block';
+
+            // Set cell type
+            const cellTypeRadio = document.querySelector(`input[name="patternEditorCellType"][value="${patternData.positionFilter.cellType}"]`);
+            if (cellTypeRadio) cellTypeRadio.checked = true;
+
+            // Set position type
+            document.getElementById('patternEditorPositionType').value = patternData.positionFilter.positionType;
+
+            // Set additional values if they exist
+            if (patternData.positionFilter.columnNumber) {
+                document.getElementById('patternEditorColumnNumber').value = patternData.positionFilter.columnNumber;
+            }
+            if (patternData.positionFilter.columnStart) {
+                document.getElementById('patternEditorColumnStart').value = patternData.positionFilter.columnStart;
+                document.getElementById('patternEditorColumnEnd').value = patternData.positionFilter.columnEnd;
+            }
+            if (patternData.positionFilter.rowNumber) {
+                document.getElementById('patternEditorRowNumber').value = patternData.positionFilter.rowNumber;
+            }
+            if (patternData.positionFilter.rowStart) {
+                document.getElementById('patternEditorRowStart').value = patternData.positionFilter.rowStart;
+                document.getElementById('patternEditorRowEnd').value = patternData.positionFilter.rowEnd;
+            }
+
+            this.updatePatternEditorPositionUI();
+        } else {
+            usePositionCheckbox.checked = false;
+            document.getElementById('patternEditorPositionSettings').style.display = 'none';
+        }
+
         modal.style.display = 'flex';
+    },
+
+    togglePatternEditorPositionFilter() {
+        const checkbox = document.getElementById('patternUsePositionFilter');
+        const settings = document.getElementById('patternEditorPositionSettings');
+        settings.style.display = checkbox.checked ? 'block' : 'none';
+    },
+
+    updatePatternEditorPositionUI() {
+        const positionType = document.getElementById('patternEditorPositionType').value;
+
+        // Hide all conditional inputs
+        document.getElementById('patternEditorColumnInput').style.display = 'none';
+        document.getElementById('patternEditorColumnRangeInput').style.display = 'none';
+        document.getElementById('patternEditorRowInput').style.display = 'none';
+        document.getElementById('patternEditorRowRangeInput').style.display = 'none';
+
+        // Show relevant inputs based on selection
+        switch(positionType) {
+            case 'column-specific':
+                document.getElementById('patternEditorColumnInput').style.display = 'block';
+                break;
+            case 'column-range':
+                document.getElementById('patternEditorColumnRangeInput').style.display = 'block';
+                break;
+            case 'row-specific':
+                document.getElementById('patternEditorRowInput').style.display = 'block';
+                break;
+            case 'row-range':
+                document.getElementById('patternEditorRowRangeInput').style.display = 'block';
+                break;
+        }
     },
 
     togglePatternTag(tagName) {
@@ -2745,6 +2824,31 @@ const tableBuilder = {
         if (!hasEnabledTags) {
             this.showToast('少なくとも1つのタグを有効にしてください', 'error');
             return;
+        }
+
+        // Save position filter settings if enabled
+        const usePositionFilter = document.getElementById('patternUsePositionFilter').checked;
+        if (usePositionFilter) {
+            const cellType = document.querySelector('input[name="patternEditorCellType"]:checked').value;
+            const positionType = document.getElementById('patternEditorPositionType').value;
+
+            pattern.positionFilter = {
+                cellType,
+                positionType
+            };
+
+            // Save additional parameters based on position type
+            if (positionType === 'column-specific') {
+                pattern.positionFilter.columnNumber = parseInt(document.getElementById('patternEditorColumnNumber').value);
+            } else if (positionType === 'column-range') {
+                pattern.positionFilter.columnStart = parseInt(document.getElementById('patternEditorColumnStart').value);
+                pattern.positionFilter.columnEnd = parseInt(document.getElementById('patternEditorColumnEnd').value);
+            } else if (positionType === 'row-specific') {
+                pattern.positionFilter.rowNumber = parseInt(document.getElementById('patternEditorRowNumber').value);
+            } else if (positionType === 'row-range') {
+                pattern.positionFilter.rowStart = parseInt(document.getElementById('patternEditorRowStart').value);
+                pattern.positionFilter.rowEnd = parseInt(document.getElementById('patternEditorRowEnd').value);
+            }
         }
 
         // If editing, delete old pattern if name changed
@@ -2977,6 +3081,9 @@ const tableBuilder = {
 
         let appliedCount = 0;
 
+        // Check if pattern has position filter enabled
+        const usePositionFilter = pattern.positionFilter ? true : false;
+
         // Apply table-level attributes (immediate, whole table)
         if (pattern.enabled.table && pattern.attributes.table) {
             this.tableAttributes = this.parseTagString(pattern.attributes.table);
@@ -2995,12 +3102,22 @@ const tableBuilder = {
             }
         });
 
-        // Apply row attributes (only to selected rows)
+        // Determine which cells to apply to
+        let targetCells;
+        if (usePositionFilter) {
+            // Use position-based selection from pattern
+            targetCells = this.getTargetCellsByPositionForPattern(pattern.positionFilter);
+        } else {
+            // Use selected cells (original behavior)
+            targetCells = this.selectedCells;
+        }
+
+        // Apply row attributes
         if (pattern.enabled.tr && pattern.attributes.tr) {
-            if (this.selectedCells.length === 0) {
+            if (targetCells.length === 0) {
                 this.showToast('行属性を適用するにはセルを選択してください', 'error');
             } else {
-                const rowIndices = [...new Set(this.selectedCells.map(cell => cell.parentNode.rowIndex))];
+                const rowIndices = [...new Set(targetCells.map(cell => cell.parentNode.rowIndex))];
                 const parsedAttrs = this.parseTagString(pattern.attributes.tr);
 
                 rowIndices.forEach(rowIndex => {
@@ -3010,9 +3127,9 @@ const tableBuilder = {
             }
         }
 
-        // Apply cell attributes (only to selected cells)
-        if ((pattern.enabled.td || pattern.enabled.th) && this.selectedCells.length > 0) {
-            this.selectedCells.forEach(cell => {
+        // Apply cell attributes
+        if ((pattern.enabled.td || pattern.enabled.th) && targetCells.length > 0) {
+            targetCells.forEach(cell => {
                 const isHeader = cell.classList.contains('header-cell');
                 const tagToUse = isHeader ? 'th' : 'td';
 
@@ -3053,16 +3170,107 @@ const tableBuilder = {
         }
 
         if (appliedCount > 0) {
+            this.clearBatchPreview();
             this.closePatternPreview();
             this.updateCode();
             this.saveHistory();
-            this.showToast(`パターン「${name}」を適用しました`);
+            const cellCountMsg = usePositionFilter ? ` (${targetCells.length}個のセルに適用)` : '';
+            this.showToast(`パターン「${name}」を適用しました${cellCountMsg}`);
         } else {
             this.closePatternPreview();
             this.showToast('適用可能な属性がありませんでした', 'error');
         }
 
         this.pendingPatternName = null;
+    },
+
+    getTargetCellsByPositionForPattern(positionFilter) {
+        const table = document.getElementById('editorTable');
+        const rows = table.querySelectorAll('tr');
+        const positionType = positionFilter.positionType;
+        const cellType = positionFilter.cellType;
+
+        let targetCells = [];
+
+        rows.forEach((row, rowIndex) => {
+            const cells = Array.from(row.children);
+
+            cells.forEach((cell, cellIndex) => {
+                const isHeader = cell.classList.contains('header-cell');
+
+                // Filter by cell type
+                if (cellType === 'th' && !isHeader) return;
+                if (cellType === 'td' && isHeader) return;
+
+                let shouldInclude = false;
+
+                switch(positionType) {
+                    case 'first-in-row':
+                        shouldInclude = (cellIndex === 0);
+                        break;
+
+                    case 'last-in-row':
+                        shouldInclude = (cellIndex === cells.length - 1);
+                        break;
+
+                    case 'not-first-in-row':
+                        shouldInclude = (cellIndex !== 0);
+                        break;
+
+                    case 'not-last-in-row':
+                        shouldInclude = (cellIndex !== cells.length - 1);
+                        break;
+
+                    case 'column-specific':
+                        const colNum = positionFilter.columnNumber;
+                        if (!colNum) return;
+                        shouldInclude = (cellIndex === colNum - 1);
+                        break;
+
+                    case 'column-range':
+                        const colStart = positionFilter.columnStart;
+                        const colEnd = positionFilter.columnEnd;
+                        if (!colStart || !colEnd) return;
+                        shouldInclude = (cellIndex >= colStart - 1 && cellIndex <= colEnd - 1);
+                        break;
+
+                    case 'row-specific':
+                        const rowNum = positionFilter.rowNumber;
+                        if (!rowNum) return;
+                        shouldInclude = (rowIndex === rowNum - 1);
+                        break;
+
+                    case 'row-range':
+                        const rowStart = positionFilter.rowStart;
+                        const rowEnd = positionFilter.rowEnd;
+                        if (!rowStart || !rowEnd) return;
+                        shouldInclude = (rowIndex >= rowStart - 1 && rowIndex <= rowEnd - 1);
+                        break;
+
+                    case 'odd-rows':
+                        shouldInclude = (rowIndex % 2 === 0);
+                        break;
+
+                    case 'even-rows':
+                        shouldInclude = (rowIndex % 2 === 1);
+                        break;
+
+                    case 'odd-columns':
+                        shouldInclude = (cellIndex % 2 === 0);
+                        break;
+
+                    case 'even-columns':
+                        shouldInclude = (cellIndex % 2 === 1);
+                        break;
+                }
+
+                if (shouldInclude) {
+                    targetCells.push(cell);
+                }
+            });
+        });
+
+        return targetCells;
     }
 };
 

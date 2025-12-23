@@ -376,6 +376,91 @@
                 <!-- Attribute editors will be inserted here -->
             </div>
 
+            <!-- Position-based Filter Section in Pattern Editor -->
+            <div style="border-top: 2px solid #e2e8f0; padding-top: 20px; margin-top: 20px;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-weight: 600; margin-bottom: 12px;">
+                        <input type="checkbox" id="patternUsePositionFilter" onchange="tableBuilder.togglePatternEditorPositionFilter()">
+                        <span>📍 位置指定で適用範囲を絞り込む</span>
+                    </label>
+                    <p style="margin: 8px 0 0 28px; font-size: 12px; color: #718096;">
+                        チェックを入れると、このパターンを適用時に自動的に指定した位置のセルのみに適用されます
+                    </p>
+                </div>
+
+                <div id="patternEditorPositionSettings" style="display: none; background: #f7fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <!-- Cell Type Selection -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px;">対象セルタイプ:</label>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 13px;">
+                                <input type="radio" name="patternEditorCellType" value="th" checked>
+                                <span>&lt;th&gt;</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 13px;">
+                                <input type="radio" name="patternEditorCellType" value="td">
+                                <span>&lt;td&gt;</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 5px; font-size: 13px;">
+                                <input type="radio" name="patternEditorCellType" value="both">
+                                <span>両方</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Position Selection -->
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px;">位置指定:</label>
+                        <select id="patternEditorPositionType" onchange="tableBuilder.updatePatternEditorPositionUI()" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                            <option value="first-in-row">各行の最初のセル</option>
+                            <option value="last-in-row">各行の最後のセル</option>
+                            <option value="not-first-in-row">各行の最初以外のセル</option>
+                            <option value="not-last-in-row">各行の最後以外のセル</option>
+                            <option value="column-specific">特定の列番号</option>
+                            <option value="column-range">列の範囲</option>
+                            <option value="row-specific">特定の行番号</option>
+                            <option value="row-range">行の範囲</option>
+                            <option value="odd-rows">奇数行のセル</option>
+                            <option value="even-rows">偶数行のセル</option>
+                            <option value="odd-columns">奇数列のセル</option>
+                            <option value="even-columns">偶数列のセル</option>
+                        </select>
+                    </div>
+
+                    <!-- Column Number Input -->
+                    <div id="patternEditorColumnInput" style="margin-bottom: 15px; display: none;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px;">列番号 (1から開始):</label>
+                        <input type="number" id="patternEditorColumnNumber" min="1" placeholder="例: 1" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                    </div>
+
+                    <!-- Column Range Input -->
+                    <div id="patternEditorColumnRangeInput" style="margin-bottom: 15px; display: none;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px;">列の範囲:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="number" id="patternEditorColumnStart" min="1" placeholder="開始列" style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                            <span style="font-size: 13px;">から</span>
+                            <input type="number" id="patternEditorColumnEnd" min="1" placeholder="終了列" style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                        </div>
+                    </div>
+
+                    <!-- Row Number Input -->
+                    <div id="patternEditorRowInput" style="margin-bottom: 15px; display: none;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px;">行番号 (1から開始):</label>
+                        <input type="number" id="patternEditorRowNumber" min="1" placeholder="例: 1" style="width: 100%; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                    </div>
+
+                    <!-- Row Range Input -->
+                    <div id="patternEditorRowRangeInput" style="margin-bottom: 15px; display: none;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 8px; font-size: 13px;">行の範囲:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="number" id="patternEditorRowStart" min="1" placeholder="開始行" style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                            <span style="font-size: 13px;">から</span>
+                            <input type="number" id="patternEditorRowEnd" min="1" placeholder="終了行" style="flex: 1; padding: 6px 10px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 13px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div style="margin-top: 25px; text-align: right; display: flex; gap: 10px; justify-content: flex-end;">
                 <button onclick="tableBuilder.savePattern()" class="primary" style="padding: 8px 20px;">保存</button>
                 <button onclick="tableBuilder.closePatternEditor()" style="padding: 8px 20px;">キャンセル</button>
