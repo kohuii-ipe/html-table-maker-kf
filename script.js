@@ -19,8 +19,10 @@ const tableBuilder = {
     sections: { thead: [], tbody: [], tfoot: [] },
     columnGroups: [],
     // Tag attributes
+    figureAttributes: { class: '', style: '', id: '' },
     tableAttributes: { class: '', style: '', id: '', border: '', cellspacing: '', cellpadding: '', width: '' },
     captionAttributes: { class: '', style: '', id: '' },
+    figcaptionAttributes: { class: '', style: '', id: '' },
     sectionAttributes: {
         thead: { class: '', style: '', id: '' },
         tbody: { class: '', style: '', id: '' },
@@ -1555,6 +1557,20 @@ const tableBuilder = {
 
     updateCode() {
         // Build HTML string with all table tags
+        let html = '';
+
+        // Check if figure tag should be added
+        const hasFigureAttrs = Object.values(this.figureAttributes).some(val => val && val.trim());
+        const hasFigcaptionAttrs = Object.values(this.figcaptionAttributes).some(val => val && val.trim());
+
+        if (hasFigureAttrs) {
+            let figureAttrs = [];
+            if (this.figureAttributes.class && this.figureAttributes.class.trim()) figureAttrs.push(`class="${this.figureAttributes.class}"`);
+            if (this.figureAttributes.style && this.figureAttributes.style.trim()) figureAttrs.push(`style="${this.figureAttributes.style}"`);
+            if (this.figureAttributes.id && this.figureAttributes.id.trim()) figureAttrs.push(`id="${this.figureAttributes.id}"`);
+            html += `<figure${figureAttrs.length ? ' ' + figureAttrs.join(' ') : ''}>\n`;
+        }
+
         // Build table tag with attributes
         let tableAttrs = [];
         if (this.tableAttributes.class && this.tableAttributes.class.trim()) tableAttrs.push(`class="${this.tableAttributes.class}"`);
@@ -1565,7 +1581,8 @@ const tableBuilder = {
         if (this.tableAttributes.cellpadding && this.tableAttributes.cellpadding.trim()) tableAttrs.push(`cellpadding="${this.tableAttributes.cellpadding}"`);
         if (this.tableAttributes.width && this.tableAttributes.width.trim()) tableAttrs.push(`width="${this.tableAttributes.width}"`);
 
-        let html = `<table${tableAttrs.length ? ' ' + tableAttrs.join(' ') : ''}>\n`;
+        const indent = hasFigureAttrs ? '  ' : '';
+        html += `${indent}<table${tableAttrs.length ? ' ' + tableAttrs.join(' ') : ''}>\n`;
 
         // Add caption if exists
         if (this.caption && this.caption.trim() !== '') {
@@ -1573,20 +1590,20 @@ const tableBuilder = {
             if (this.captionAttributes.class && this.captionAttributes.class.trim()) captionAttrs.push(`class="${this.captionAttributes.class}"`);
             if (this.captionAttributes.style && this.captionAttributes.style.trim()) captionAttrs.push(`style="${this.captionAttributes.style}"`);
             if (this.captionAttributes.id && this.captionAttributes.id.trim()) captionAttrs.push(`id="${this.captionAttributes.id}"`);
-            html += `  <caption${captionAttrs.length ? ' ' + captionAttrs.join(' ') : ''}>${this.caption}</caption>\n`;
+            html += `${indent}  <caption${captionAttrs.length ? ' ' + captionAttrs.join(' ') : ''}>${this.caption}</caption>\n`;
         }
 
         // Add colgroup if exists
         if (this.columnGroups.length > 0 && this.columnGroups.some(col => col.style || col.class || col.span > 1)) {
-            html += '  <colgroup>\n';
+            html += `${indent}  <colgroup>\n`;
             this.columnGroups.forEach(col => {
                 let attrs = [];
                 if (col.span && col.span > 1) attrs.push(`span="${col.span}"`);
                 if (col.style && col.style.trim()) attrs.push(`style="${col.style}"`);
                 if (col.class && col.class.trim()) attrs.push(`class="${col.class}"`);
-                html += `    <col${attrs.length ? ' ' + attrs.join(' ') : ''}>\n`;
+                html += `${indent}    <col${attrs.length ? ' ' + attrs.join(' ') : ''}>\n`;
             });
-            html += '  </colgroup>\n';
+            html += `${indent}  </colgroup>\n`;
         }
 
         // Helper function to get cleaned row HTML
@@ -1603,7 +1620,7 @@ const tableBuilder = {
                 if (rowAttributes.id && rowAttributes.id.trim()) rowAttrs.push(`id="${rowAttributes.id}"`);
             }
 
-            let rowHtml = `      <tr${rowAttrs.length ? ' ' + rowAttrs.join(' ') : ''}>\n`;
+            let rowHtml = `${indent}      <tr${rowAttrs.length ? ' ' + rowAttrs.join(' ') : ''}>\n`;
             Array.from(row.cells).forEach(cell => {
                 // Determine if this should be th or td
                 const isHeaderCell = cell.classList.contains('header-cell');
@@ -1638,9 +1655,9 @@ const tableBuilder = {
                 });
 
                 const attrStr = attrs.length ? ' ' + attrs.join(' ') : '';
-                rowHtml += `        <${tagName}${attrStr}>${cell.innerHTML}</${tagName}>\n`;
+                rowHtml += `${indent}        <${tagName}${attrStr}>${cell.innerHTML}</${tagName}>\n`;
             });
-            rowHtml += '      </tr>\n';
+            rowHtml += `${indent}      </tr>\n`;
             return rowHtml;
         };
 
@@ -1650,11 +1667,11 @@ const tableBuilder = {
             if (this.sectionAttributes.thead.class && this.sectionAttributes.thead.class.trim()) theadAttrs.push(`class="${this.sectionAttributes.thead.class}"`);
             if (this.sectionAttributes.thead.style && this.sectionAttributes.thead.style.trim()) theadAttrs.push(`style="${this.sectionAttributes.thead.style}"`);
             if (this.sectionAttributes.thead.id && this.sectionAttributes.thead.id.trim()) theadAttrs.push(`id="${this.sectionAttributes.thead.id}"`);
-            html += `  <thead${theadAttrs.length ? ' ' + theadAttrs.join(' ') : ''}>\n`;
+            html += `${indent}  <thead${theadAttrs.length ? ' ' + theadAttrs.join(' ') : ''}>\n`;
             this.sections.thead.forEach(rowIndex => {
                 html += getRowHTML(rowIndex);
             });
-            html += '  </thead>\n';
+            html += `${indent}  </thead>\n`;
         }
 
         // Add tbody section
@@ -1663,11 +1680,11 @@ const tableBuilder = {
             if (this.sectionAttributes.tbody.class && this.sectionAttributes.tbody.class.trim()) tbodyAttrs.push(`class="${this.sectionAttributes.tbody.class}"`);
             if (this.sectionAttributes.tbody.style && this.sectionAttributes.tbody.style.trim()) tbodyAttrs.push(`style="${this.sectionAttributes.tbody.style}"`);
             if (this.sectionAttributes.tbody.id && this.sectionAttributes.tbody.id.trim()) tbodyAttrs.push(`id="${this.sectionAttributes.tbody.id}"`);
-            html += `  <tbody${tbodyAttrs.length ? ' ' + tbodyAttrs.join(' ') : ''}>\n`;
+            html += `${indent}  <tbody${tbodyAttrs.length ? ' ' + tbodyAttrs.join(' ') : ''}>\n`;
             this.sections.tbody.forEach(rowIndex => {
                 html += getRowHTML(rowIndex);
             });
-            html += '  </tbody>\n';
+            html += `${indent}  </tbody>\n`;
         }
 
         // Add tfoot section
@@ -1676,16 +1693,30 @@ const tableBuilder = {
             if (this.sectionAttributes.tfoot.class && this.sectionAttributes.tfoot.class.trim()) tfootAttrs.push(`class="${this.sectionAttributes.tfoot.class}"`);
             if (this.sectionAttributes.tfoot.style && this.sectionAttributes.tfoot.style.trim()) tfootAttrs.push(`style="${this.sectionAttributes.tfoot.style}"`);
             if (this.sectionAttributes.tfoot.id && this.sectionAttributes.tfoot.id.trim()) tfootAttrs.push(`id="${this.sectionAttributes.tfoot.id}"`);
-            html += `  <tfoot${tfootAttrs.length ? ' ' + tfootAttrs.join(' ') : ''}>\n`;
+            html += `${indent}  <tfoot${tfootAttrs.length ? ' ' + tfootAttrs.join(' ') : ''}>\n`;
             this.sections.tfoot.forEach(rowIndex => {
                 html += getRowHTML(rowIndex);
             });
-            html += '  </tfoot>\n';
+            html += `${indent}  </tfoot>\n`;
         }
 
-        html += '</table>';
+        html += `${indent}</table>\n`;
 
-        document.getElementById('codeOutput').value = html;
+        // Add figcaption if exists
+        if (hasFigureAttrs && hasFigcaptionAttrs) {
+            let figcaptionAttrs = [];
+            if (this.figcaptionAttributes.class && this.figcaptionAttributes.class.trim()) figcaptionAttrs.push(`class="${this.figcaptionAttributes.class}"`);
+            if (this.figcaptionAttributes.style && this.figcaptionAttributes.style.trim()) figcaptionAttrs.push(`style="${this.figcaptionAttributes.style}"`);
+            if (this.figcaptionAttributes.id && this.figcaptionAttributes.id.trim()) figcaptionAttrs.push(`id="${this.figcaptionAttributes.id}"`);
+            html += `  <figcaption${figcaptionAttrs.length ? ' ' + figcaptionAttrs.join(' ') : ''}></figcaption>\n`;
+        }
+
+        // Close figure tag
+        if (hasFigureAttrs) {
+            html += '</figure>';
+        }
+
+        document.getElementById('codeOutput').value = html.trim();
 
         // Auto-save to localStorage
         this.saveToStorage();
@@ -2655,18 +2686,20 @@ const tableBuilder = {
 
         // Set name
         nameInput.value = this.currentEditingPattern || '';
-        nameInput.disabled = !!this.currentEditingPattern;
+        nameInput.disabled = false;
 
         // Define all tag types
         const tags = [
+            { name: 'figure', label: '&lt;figure&gt;', placeholder: 'class="table-figure"' },
             { name: 'table', label: '&lt;table&gt;', placeholder: 'class="my-table" border="1"' },
-            { name: 'caption', label: '&lt;caption&gt;', placeholder: 'class="caption" style="text-align: left;"' },
+            { name: 'caption', label: '&lt;caption&gt;', placeholder: 'class="caption"' },
+            { name: 'figcaption', label: '&lt;figcaption&gt;', placeholder: 'class="table-figcaption"' },
             { name: 'thead', label: '&lt;thead&gt;', placeholder: 'class="table-header"' },
             { name: 'tbody', label: '&lt;tbody&gt;', placeholder: 'class="table-body"' },
             { name: 'tfoot', label: '&lt;tfoot&gt;', placeholder: 'class="table-footer"' },
-            { name: 'tr', label: '&lt;tr&gt;', placeholder: 'class="row" style="height: 40px;"' },
-            { name: 'td', label: '&lt;td&gt;', placeholder: 'class="cell" data-type="text"' },
-            { name: 'th', label: '&lt;th&gt;', placeholder: 'class="header-cell" scope="col"' }
+            { name: 'tr', label: '&lt;tr&gt;', placeholder: 'class="row"' },
+            { name: 'td', label: '&lt;td&gt;', placeholder: 'class="cell"' },
+            { name: 'th', label: '&lt;th&gt;', placeholder: 'class="header-cell"' }
         ];
 
         // Render attribute editors
@@ -2795,13 +2828,19 @@ const tableBuilder = {
             return;
         }
 
-        // Check if name already exists (only for new patterns)
-        if (!this.currentEditingPattern && this.patterns[patternName]) {
+        // Check if name already exists
+        // For new patterns: check if name exists at all
+        // For editing: check if name exists AND is different from current pattern name
+        const nameExists = this.patterns[patternName];
+        const isRenamingToExisting = this.currentEditingPattern && patternName !== this.currentEditingPattern && nameExists;
+        const isNewWithExisting = !this.currentEditingPattern && nameExists;
+
+        if (isNewWithExisting || isRenamingToExisting) {
             this.showToast('同じ名前のパターンが既に存在します', 'error');
             return;
         }
 
-        const tags = ['table', 'caption', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'];
+        const tags = ['figure', 'table', 'caption', 'figcaption', 'thead', 'tbody', 'tfoot', 'tr', 'td', 'th'];
         const pattern = {
             enabled: {},
             attributes: {}
@@ -3084,7 +3123,12 @@ const tableBuilder = {
         // Check if pattern has position filter enabled
         const usePositionFilter = pattern.positionFilter ? true : false;
 
-        // Apply table-level attributes (immediate, whole table)
+        // Apply figure and table-level attributes (immediate, whole table)
+        if (pattern.enabled.figure && pattern.attributes.figure) {
+            this.figureAttributes = this.parseTagString(pattern.attributes.figure);
+            appliedCount++;
+        }
+
         if (pattern.enabled.table && pattern.attributes.table) {
             this.tableAttributes = this.parseTagString(pattern.attributes.table);
             appliedCount++;
@@ -3092,6 +3136,11 @@ const tableBuilder = {
 
         if (pattern.enabled.caption && pattern.attributes.caption) {
             this.captionAttributes = this.parseTagString(pattern.attributes.caption);
+            appliedCount++;
+        }
+
+        if (pattern.enabled.figcaption && pattern.attributes.figcaption) {
+            this.figcaptionAttributes = this.parseTagString(pattern.attributes.figcaption);
             appliedCount++;
         }
 
